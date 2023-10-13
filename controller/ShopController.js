@@ -1,35 +1,27 @@
-const { Product, Shop } = require("../models");
-const imagekit = require("../lib/imagekit");
+const { Shop, Product } = require("../models");
 const ApiError = require("../utils/apiError");
 
-const createProduct = async (req, res, next) => {
-  const { name, price, stock } = req.body;
-  const file = req.file;
-  let img;
-
+const createShop = async (req, res, next) => {
   try {
-    if (file) {
-      const split = file.originalname.split(".");
-      const extension = split[split.length - 1];
+    let { name, product } = req.body;
+    const userId = req.user.id;
 
-      const uploadedImage = await imagekit.upload({
-        file: file.buffer,
-        fileName: `IMG-${Date.now()}.${extension}`,
-      });
-      img = uploadedImage.url;
-    }
+    const productId = await Product.findOne({
+      where: {
+        name: product,
+      },
+    });
 
-    const newProduct = await Product.create({
+    const newShop = await Shop.create({
       name,
-      price,
-      stock,
-      imageUrl: img,
+      productId: productId.id,
+      userId,
     });
 
     res.status(200).json({
       status: "Success",
       data: {
-        newProduct,
+        newShop,
       },
     });
   } catch (err) {
@@ -37,14 +29,16 @@ const createProduct = async (req, res, next) => {
   }
 };
 
-const findProducts = async (req, res, next) => {
+const findShops = async (req, res, next) => {
   try {
-    const products = await Product.findAll();
+    const Shops = await Shop.findAll({
+      include: ["Product"],
+    });
 
     res.status(200).json({
       status: "Success",
       data: {
-        products,
+        Shops,
       },
     });
   } catch (err) {
@@ -52,9 +46,9 @@ const findProducts = async (req, res, next) => {
   }
 };
 
-const findProductById = async (req, res, next) => {
+const findShopById = async (req, res, next) => {
   try {
-    const product = await Product.findOne({
+    const shop = await Shop.findOne({
       where: {
         id: req.params.id,
       },
@@ -63,7 +57,7 @@ const findProductById = async (req, res, next) => {
     res.status(200).json({
       status: "Success",
       data: {
-        product,
+        shop,
       },
     });
   } catch (err) {
@@ -71,10 +65,10 @@ const findProductById = async (req, res, next) => {
   }
 };
 
-const UpdateProduct = async (req, res, next) => {
+const updateShop = async (req, res, next) => {
   const { name, price, stock } = req.body;
   try {
-    const product = await Product.update(
+    const shop = await Shop.update(
       {
         name,
         price,
@@ -96,19 +90,19 @@ const UpdateProduct = async (req, res, next) => {
   }
 };
 
-const deleteProduct = async (req, res, next) => {
+const deleteShop = async (req, res, next) => {
   try {
-    const product = await Product.findOne({
+    const shop = await Shop.findOne({
       where: {
         id: req.params.id,
       },
     });
 
-    if (!product) {
-      next(new ApiError("Product id tersebut gak ada", 404));
+    if (!shop) {
+      next(new ApiError("Shop id tersebut gak ada", 404));
     }
 
-    await Product.destroy({
+    await Shop.destroy({
       where: {
         id: req.params.id,
       },
@@ -124,9 +118,9 @@ const deleteProduct = async (req, res, next) => {
 };
 
 module.exports = {
-  createProduct,
-  findProducts,
-  findProductById,
-  UpdateProduct,
-  deleteProduct,
+  createShop,
+  findShops,
+  findShopById,
+  updateShop,
+  deleteShop,
 };
